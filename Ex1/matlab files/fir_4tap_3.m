@@ -48,17 +48,17 @@ end
 y = int16(y);
 
 % ---- Optional: floating-point view for plotting ----
-% x_f = double(x) / 2^15;
-% y_f = double(y) / 2^15;
+x_f = double(x) / 2^15;
+y_f = double(y) / 2^15;
 
-% figure;
-% subplot(2,1,1);
-% plot(x_f, 'o-'); grid on;
-% title('Input Signal (Q1.15)');
-% 
-% subplot(2,1,2);
-% plot(y_f, 'o-'); grid on;
-% title('FIR Output – Final Rounding Only');
+figure;
+subplot(2,1,1);
+plot(x_f, 'o-'); grid on;
+title('Input Signal (Q1.15)');
+
+subplot(2,1,2);
+plot(y_f, 'o-'); grid on;
+title('FIR Output – Final Rounding Only');
 
 
 fprintf('Idx | Input(Hex) Input(Dec) Input(Float) | Output(Hex) Output(Dec) Output(Float)\n');
@@ -75,7 +75,7 @@ for n = 1:N
 end
 
 
-fid = fopen('output_matlab_hex.txt','w');
+fid = fopen('matlab_hexout_3.txt','w');
 for n = 1:N
     fprintf(fid, '%04X\n', typecast(y(n),'uint16'));
 end

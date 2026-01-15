@@ -1,13 +1,13 @@
 `timescale 1ns / 1ps
 
-module tb;
+module tb_final_roundoff;
 
     reg clk;
     reg reset;
     reg signed [15:0] x_in;
     wire signed [15:0] y_out;
 
-    fir_4tap dut (
+    fir_4tap_final_roundoff dut (
         .clk   (clk),
         .reset (reset),
         .x_in  (x_in),
@@ -21,7 +21,7 @@ module tb;
     
     initial begin
     	$readmemh("input.txt", inputs);
-    	$readmemh("output_matlab_hex.txt", matlab_out);
+    	$readmemh("matlab_hexout_3.txt", matlab_out);
     end
 
     always #5 clk = ~clk;
