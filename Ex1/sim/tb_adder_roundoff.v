@@ -65,9 +65,11 @@ module tb_adder_roundoff;
 		// Skip first few samples (delay line not full)
 		
 		    if (y_out === matlab_out[j-2])
-			$display("%0t\t%0d\t%04h\t\t%04h\t\t%04h\t\tYES", $time, j, x_in, y_out, matlab_out[j-2]);
+			$display("%0t\t%0d\t%04h\t\t%04h\t\t%04h\t\tYES", 
+				$time, j, x_in, y_out, matlab_out[j-2]);
 		    else
-			$display("%0t\t%0d\t%04h\t\t%04h\t\t%04h\t\tNO", $time, j, x_in, y_out, matlab_out[j-2]);
+			$display("%0t\t%0d\t%04h\t\t%04h\t\t%04h\t\tNO", 
+				$time, j, x_in, y_out, matlab_out[j-2]);
 		
 	    end
 	end

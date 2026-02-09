@@ -25,6 +25,8 @@ module fir_4tap_final_roundoff #(parameter integer W = 16)(
     	end
     end
     
+
+    // Rounding only at the final stage, W = 16
     
     wire signed [(2*W)-1:0] mul_out0 = h0 * x_in;
     wire signed [(2*W)-1:0] mul_out1 = h1 * x1;

@@ -25,6 +25,8 @@ module fir_4tap_adder_roundoff #(parameter integer W=16) (
     	end
     end
     
+
+    // Rounded off after every adder stages, W=16
     
     wire signed [(2*W)-1:0] mul_out0 = (h0 * x_in);
     wire signed [(2*W)-1:0] mul_out1 = (h1 * x1);
