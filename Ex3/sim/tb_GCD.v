@@ -1,6 +1,6 @@
 `timescale 1ns / 1ps
 
-module tb_GCD_1;
+module tb_GCD;
 
     parameter N = 8;
 
@@ -17,7 +17,20 @@ module tb_GCD_1;
     wire [N-1:0] gcd;
 
     // DUT instantiation
-    GCD_1 #(N) dut (
+//    GCD_1 #(N) dut (
+//        .clk(clk),
+//        .rst(rst),
+//        .operands_valid(operands_valid),
+//        .ACK(ACK),
+//        .A_in(A_in),
+//        .B_in(B_in),
+//        .B_eq_0(B_eq_0),
+//        .A_lt_B(A_lt_B),
+//        .state(state),
+//        .gcd(gcd)
+//    );
+    
+    GCD_2 #(N) dut (
         .clk(clk),
         .rst(rst),
         .operands_valid(operands_valid),
@@ -63,7 +76,7 @@ module tb_GCD_1;
         $display("GCD Done! A=%0d B=%0d => gcd=%0d", A_in, B_in, gcd);
 
         // send ACK
-        #10;
+        #30;
         ACK = 1;
         #10;
         ACK = 0;
@@ -80,7 +93,7 @@ module tb_GCD_1;
 	$display("GCD Done! A=%0d B=%0d => gcd=%0d", A_in, B_in, gcd);
 	
 	 // send ACK
-        #10;
+        #30;
         ACK = 1;
         #10;
         ACK = 0;
