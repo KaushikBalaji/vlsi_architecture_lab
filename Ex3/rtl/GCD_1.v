@@ -4,7 +4,8 @@ module GCD_1 #(parameter N = 8) (
 	input clk, input rst, input operands_valid, input ACK,
 	input [N-1:0] A_in, input [N-1:0] B_in,
 	output B_eq_0, output A_lt_B,
-	output [1:0] state, output[N-1:0] gcd
+	output [1:0] state, output[N-1:0] gcd,
+	output gcd_valid
 	);
 	
 	// ports used
@@ -14,17 +15,18 @@ module GCD_1 #(parameter N = 8) (
 	wire[N-1:0] adder_out;
 	reg[1:0] A_mux_sel;
 	reg B_mux_sel;
-	
+	reg[1:0] curr_state;
+
 	assign A_lt_B = (A_reg < B_reg);
 	assign B_eq_0 = (B_reg == 0);
 	assign adder_out = (A_reg - B_reg);
 	assign gcd = A_reg;
+	assign gcd_valid = (curr_state == DONE);
 	
 	parameter IDLE = 2'b00;
 	parameter BUSY = 2'b01;
 	parameter DONE = 2'b10;
 	
-	reg[1:0] curr_state;
 	assign state = curr_state;
 	
 	// MUX output selection
@@ -93,10 +95,7 @@ module GCD_1 #(parameter N = 8) (
 		end
 	end
 	
-//	enb_reg #(.N(N)) AREG (.clk(clk), .rst(rst), .en(A_en), .d());
-	
-	
-	
+
 	// FSM
 	always @(posedge clk) begin
 		if (rst)
@@ -112,7 +111,16 @@ module GCD_1 #(parameter N = 8) (
 			endcase
 		end
 	end
-
+	
+	reg [8*5:1] state_string;   // 5-character string
+	
+	always @(*) begin
+	    case (curr_state)
+		IDLE: state_string = "IDLE ";
+		BUSY: state_string = "BUSY ";
+		DONE: state_string = "DONE ";
+		default: state_string = "UNKN ";
+	    endcase
+	end
 
 endmodule
-

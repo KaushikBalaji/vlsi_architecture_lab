@@ -4,7 +4,8 @@ module GCD_2 #(parameter N = 8) (
 	input clk, input rst, input operands_valid, input ACK,
 	input [N-1:0] A_in, input [N-1:0] B_in,
 	output B_eq_0, output A_lt_B,
-	output [1:0] state, output[N-1:0] gcd
+	output [1:0] state, output[N-1:0] gcd,
+	output gcd_valid
 	);
 	
 	// ports used
@@ -17,6 +18,7 @@ module GCD_2 #(parameter N = 8) (
 	assign B_eq_0 = (B_reg == 0);
 	assign adder_out = (A_reg - B_reg);
 	assign gcd = A_reg;
+	assign gcd_valid = (curr_state == DONE);
 	
 	parameter IDLE = 2'b00;
 	parameter BUSY = 2'b01;
@@ -61,11 +63,11 @@ module GCD_2 #(parameter N = 8) (
 			    	end
 				else if (A_lt_B) begin
 					A_mux_sel = 2'b11; 
-					B_mux_sel = 2'b10;	// swap register values
+					B_mux_sel = 2'b10;	// swap nos
 				end
 				else begin
 					A_mux_sel = 2'b10;
-					B_mux_sel = 2'b00;	// A-B given to A, and B retains value
+					B_mux_sel = 2'b00;
 				end
 			end		
 		endcase
@@ -80,7 +82,10 @@ module GCD_2 #(parameter N = 8) (
 			A_reg <= A_mux_out;
 			B_reg <= B_mux_out;	
 		end
-	end	
+	end
+	
+//	enb_reg #(.N(N)) AREG (.clk(clk), .rst(rst), .en(A_en), .d());
+	
 	
 	
 	// FSM
@@ -98,7 +103,15 @@ module GCD_2 #(parameter N = 8) (
 			endcase
 		end
 	end
+	
+	reg [8*5:1] state_string;   // 5-character string
 
-
+	always @(*) begin
+	    case (curr_state)
+		IDLE: state_string = "IDLE ";
+		BUSY: state_string = "BUSY ";
+		DONE: state_string = "DONE ";
+		default: state_string = "UNKN ";
+	    endcase
+	end
 endmodule
-
