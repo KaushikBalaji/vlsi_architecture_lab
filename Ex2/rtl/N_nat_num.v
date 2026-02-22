@@ -18,7 +18,7 @@ reg [N-1:0]N_reg;
 reg [N-1:0]i_reg;
 reg [N-1:0]sum_reg;
 
-wire i_eq_N;
+//wire i_eq_N;
 wire [N-1:0]adder_out;
 
 // combinational logic
