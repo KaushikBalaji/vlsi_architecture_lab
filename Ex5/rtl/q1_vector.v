@@ -1,8 +1,11 @@
-module cordic_rotation (
+// `include "/barrel_shifter.v"
+
+
+module cordic_vectoring (
     input clk, input rst, input operands_valid,
     input [15:0] x_in, input [15:0] y_in, input [15:0] theta_in,
     output [15:0] x_out, output [15:0] y_out,
-    output reg done, output valid_out
+    output valid_out
 );
 
     parameter IDLE = 2'b00;
@@ -14,7 +17,7 @@ module cordic_rotation (
     reg [3:0] i_reg;
 
 
-    wire [15:0] x_mux_out, y_mux_out, theta_mux_out, x_shift, y_shift;
+    wire signed [15:0] x_mux_out, y_mux_out, theta_mux_out, x_shift, y_shift;
     reg signed [15:0] x_add_out, y_add_out, theta_add_out;
 
 
@@ -49,10 +52,10 @@ module cordic_rotation (
 //    assign y_shift = y_reg >>> i_reg;
 
     barrel_shifter bsx(
-            .data_in(x_reg),
-            .shift(i_reg),
-            .data_out(x_shift)
-        );
+        .data_in(x_reg),
+        .shift(i_reg),
+        .data_out(x_shift)
+    );
     
     barrel_shifter bsy(
         .data_in(y_reg),
@@ -71,11 +74,9 @@ module cordic_rotation (
     assign y_out = y_reg;
 
 
-
-
     always @(*) begin
-        // when msb of theta == 1, then theta is negative
-        if(theta_reg[15] == 1) begin
+        // when msb of y == 1, then theta is negative
+        if(y_reg[15] == 0) begin
             x_add_out = x_reg + y_shift;
             y_add_out = y_reg - x_shift;
             theta_add_out = theta_reg + atan_lut_out;
@@ -100,7 +101,7 @@ module cordic_rotation (
         end
     end
 
-    // FSM state change logic
+    // FSM next state change logic
     always @(*) begin
         case (state)
             IDLE: next_state = operands_valid ? BUSY : IDLE;
@@ -121,7 +122,9 @@ module cordic_rotation (
 
     // counter iterations
     always @(posedge clk) begin
-        if(state == BUSY)
+        if(rst)
+            i_reg <= 0;
+        else if(state == BUSY)
             i_reg <= i_reg + 1;
         else
             i_reg <= 0;
