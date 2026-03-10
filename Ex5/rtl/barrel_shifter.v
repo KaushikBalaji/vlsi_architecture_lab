@@ -1,6 +1,6 @@
 module barrel_shifter(
-    input  signed [15:0] data_in,
-    input  [3:0] shift,
+    input signed [15:0] data_in,
+    input [3:0] shift,
     output signed [15:0] data_out
 );
 

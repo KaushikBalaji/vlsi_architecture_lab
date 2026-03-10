@@ -64,7 +64,7 @@ module cordic_vectoring (
     );
 
     // Muxes for x, y, and theta
-    assign x_mux_out = (state == IDLE) ? x_in : x_add_out;
+    assign x_mux_out = (state == IDLE) ? x_in : (state == DONE) ? x_add_out : x_add_out;
     assign y_mux_out = (state == IDLE) ? y_in : y_add_out;
     assign theta_mux_out = (state == IDLE) ? theta_in : theta_add_out;
 
