@@ -31,28 +31,13 @@ wire signed [15:0] x_mux_out, y_mux_out, theta_mux_out;
 
 reg x_mux_sel, y_mux_sel, theta_mux_sel;
 
-reg signed [15:0] atan_lut_out;
 
-always @(*) begin
-    case(i_reg)
-        4'd0: atan_lut_out = 16'd12868;
-        4'd1: atan_lut_out = 16'd7596;
-        4'd2: atan_lut_out = 16'd4014;
-        4'd3: atan_lut_out = 16'd2037;
-        4'd4: atan_lut_out = 16'd1023;
-        4'd5: atan_lut_out = 16'd512;
-        4'd6: atan_lut_out = 16'd256;
-        4'd7: atan_lut_out = 16'd128;
-        4'd8: atan_lut_out = 16'd64;
-        4'd9: atan_lut_out = 16'd32;
-        4'd10: atan_lut_out = 16'd16;
-        4'd11: atan_lut_out = 16'd8;
-        4'd12: atan_lut_out = 16'd4;
-        4'd13: atan_lut_out = 16'd2;
-        4'd14: atan_lut_out = 16'd1;
-        4'd15: atan_lut_out = 16'd0;
-    endcase
-end
+
+reg [15:0] atan_lut [0:15];
+    initial begin
+        $readmemh("atan_lut.mem", atan_lut); 
+    end
+
 
 barrel_shifter bsx(
     .data_in(x_reg),
@@ -80,12 +65,12 @@ always @(*) begin
         // Rotating Counter-Clockwise (+)
         x_add_out = x_reg - y_shift;
         y_add_out = y_reg + x_shift;
-        theta_add_out = theta_reg - atan_lut_out;
+        theta_add_out = theta_reg - atan_lut[i_reg];
     end else begin
         // Rotating Clockwise (-)
         x_add_out = x_reg + y_shift;
         y_add_out = y_reg - x_shift;
-        theta_add_out = theta_reg + atan_lut_out;
+        theta_add_out = theta_reg + atan_lut[i_reg];
     end
 end
 

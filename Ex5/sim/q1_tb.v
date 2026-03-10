@@ -17,6 +17,7 @@ module tb_cordic;
     initial clk = 0;
     always #5 clk = ~clk;
 
+    // Fixed Task: No strings, hardcoded threshold
     task verify_result;
         input signed [15:0] exp_x;
         input signed [15:0] exp_y;
