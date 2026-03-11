@@ -1,33 +1,34 @@
-`include "/home/sem2/VLSI_vivado/cordic/cordic.srcs/sources_1/new/barrel_shifter.v"
+//`include "/home/sem2/VLSI_vivado/cordic/cordic.srcs/sources_1/new/barrel_shifter.v"
 
-module cordic (
+module cordic #(parameter N = 16) (
     input clk,
     input rst,
     input operands_valid,
     input cordic_mode,
+    input ack,
 
-    input signed [15:0] x_in,
-    input signed [15:0] y_in,
-    input signed [15:0] theta_in,
+    input signed [N-1:0] x_in,
+    input signed [N-1:0] y_in,
+    input signed [N-1:0] theta_in,
 
-    output signed [15:0] x_out,
-    output signed [15:0] y_out,
+    output signed [N-1:0] x_out,
+    output signed [N-1:0] y_out,
     output valid_out
 );
 
-parameter IDLE = 2'b00;
-parameter BUSY = 2'b01;
-parameter DONE = 2'b10;
+localparam IDLE = 2'b00;
+localparam BUSY = 2'b01;
+localparam DONE = 2'b10;
 
 reg [1:0] state, next_state;
 
-reg signed [15:0] x_reg, y_reg, theta_reg;
+reg signed [N-1:0] x_reg, y_reg, theta_reg;
 reg [3:0] i_reg;
 
-wire signed [15:0] x_shift, y_shift;
-reg signed [15:0] x_add_out, y_add_out, theta_add_out;
+wire signed [N-1:0] x_shift, y_shift;
+reg signed [N-1:0] x_add_out, y_add_out, theta_add_out;
 
-wire signed [15:0] x_mux_out, y_mux_out, theta_mux_out;
+wire signed [N-1:0] x_mux_out, y_mux_out, theta_mux_out;
 
 reg x_mux_sel, y_mux_sel, theta_mux_sel;
 
@@ -58,7 +59,7 @@ assign valid_out = (state == DONE);
 wire rotate_positive;
 // In Vectoring , y < 0 -> rotate anti-clockwise (+) to get back to zero.
 // In Rotation  , theta > 0 -> rotate clockwise (-) to get back to zero.
-assign decision_bit = (cordic_mode) ? y_reg[15] : ~theta_reg[15];
+assign decision_bit = (cordic_mode) ? y_reg[N-1] : ~theta_reg[N-1];
 
 always @(*) begin
     if (decision_bit) begin
@@ -112,7 +113,7 @@ always @(*) begin
     case(state)
         IDLE: next_state = operands_valid ? BUSY : IDLE;
         BUSY: next_state = (i_reg == 4'd15) ? DONE : BUSY;
-        DONE: next_state = IDLE;
+        DONE: next_state = ack ? IDLE : DONE;
         default: next_state = IDLE;
     endcase
 end

@@ -2,11 +2,12 @@
 
 module tb_cordic_pipeline;
 
+    parameter N = 16;
     reg clk, rst, cordic_mode;
     reg signed [15:0] x_in, y_in, theta_in;
     wire signed [15:0] x_out, y_out;
 
-    cordic_pipelined DUT (
+    cordic_pipelined #(.N(N)) DUT (
         .clk(clk), .rst(rst),
         .cordic_mode(cordic_mode),
         .x_in(x_in), .y_in(y_in), .theta_in(theta_in),
@@ -18,8 +19,8 @@ module tb_cordic_pipeline;
 
     // Fixed Task: No strings, hardcoded threshold
     task verify_result;
-        input signed [15:0] exp_x;
-        input signed [15:0] exp_y;
+        input signed [N-1:0] exp_x;
+        input signed [N-1:0] exp_y;
         begin
             if (abs(x_out - exp_x) <= 100 && abs(y_out - exp_y) <= 100)
                 $display("[PASS] Expected (%d, %d), Got (%d, %d)", exp_x, exp_y, x_out, y_out);

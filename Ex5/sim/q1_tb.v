@@ -2,13 +2,16 @@
 
 module tb_cordic;
 
+    parameter N = 16;
     reg clk, rst, operands_valid, cordic_mode;
+    reg ack;
     reg signed [15:0] x_in, y_in, theta_in;
     wire signed [15:0] x_out, y_out;
     wire valid_out;
 
-    cordic DUT (
+    cordic #(.N(N)) DUT (
         .clk(clk), .rst(rst), .operands_valid(operands_valid),
+        .ack(ack),
         .cordic_mode(cordic_mode),
         .x_in(x_in), .y_in(y_in), .theta_in(theta_in),
         .x_out(x_out), .y_out(y_out), .valid_out(valid_out)
@@ -19,8 +22,8 @@ module tb_cordic;
 
     // Fixed Task: No strings, hardcoded threshold
     task verify_result;
-        input signed [15:0] exp_x;
-        input signed [15:0] exp_y;
+        input signed [N-1:0] exp_x;
+        input signed [N-1:0] exp_y;
         begin
             wait(valid_out);
             #1; 
@@ -29,6 +32,12 @@ module tb_cordic;
             else
                 $display("[FAIL] Expected (%d, %d), Got (%d, %d)", exp_x, exp_y, x_out, y_out);
             #10;
+            
+            ack = 1;
+            #10;
+            ack = 0;
+
+            #20;
         end
     endtask
 
@@ -37,7 +46,7 @@ module tb_cordic;
     endfunction
 
     initial begin
-        rst = 1; operands_valid = 0; x_in = 0; y_in = 0; theta_in = 0;
+        rst = 1; operands_valid = 0; x_in = 0; y_in = 0; theta_in = 0; ack = 0;
         #20 rst = 0;
 
         // TEST 1: 45 degree rotation
@@ -60,7 +69,7 @@ module tb_cordic;
         verify_result(16'd14655, 16'd7326);
 
 
-        // TEST 3: Vectoring (45 degrees)
+        // TEST 3: 45 degrees vectoring
         // x_in = 2000, y_in = 2000
         // Expected x_out: sqrt(2000^2 + 2000^2) * 1.6467 = 4658
         $display("Running Test 3: Vectoring (2000, 2000)");
