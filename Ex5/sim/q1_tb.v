@@ -6,7 +6,7 @@ module tb_cordic;
     reg clk, rst, operands_valid, cordic_mode;
     reg ack;
     reg signed [15:0] x_in, y_in, theta_in;
-    wire signed [15:0] x_out, y_out;
+    wire signed [15:0] x_out, y_out, theta_out;
     wire valid_out;
 
     cordic #(.N(N)) DUT (
@@ -14,7 +14,7 @@ module tb_cordic;
         .ack(ack),
         .cordic_mode(cordic_mode),
         .x_in(x_in), .y_in(y_in), .theta_in(theta_in),
-        .x_out(x_out), .y_out(y_out), .valid_out(valid_out)
+        .x_out(x_out), .y_out(y_out), .theta_out(theta_out), .valid_out(valid_out)
     );
 
     initial clk = 0;
@@ -67,8 +67,8 @@ module tb_cordic;
         x_in = 16'd9949; y_in = 16'd0; theta_in = 16'd7596;
         operands_valid = 1; #10; operands_valid = 0;
         verify_result(16'd14655, 16'd7326);
-
-
+        
+        
         // TEST 3: 45 degrees vectoring
         // x_in = 2000, y_in = 2000
         // Expected x_out: sqrt(2000^2 + 2000^2) * 1.6467 = 4658
@@ -77,6 +77,24 @@ module tb_cordic;
         x_in = 16'd2000; y_in = 16'd2000; theta_in = 16'd0;
         operands_valid = 1; #10; operands_valid = 0;
         verify_result(16'd4658, 16'd0);
+        
+        
+// TEST 4: Rotation of a non-zero Y vector by 45 degrees
+        // Initial Vector: (8000, 6000)
+        // Rotation: 45 degrees (12868)
+        // Expected result: X_out = 2329, Y_out = 16302
+$display("Running Test: Rotation (0.5,0.25) by 30deg");
+
+cordic_mode = 0;
+
+x_in = 16'd8192;   // 0.5 * 16384
+y_in = 16'd4096;   // 0.25 * 16384
+theta_in = 16'd8574; // 30°
+
+operands_valid = 1; #10; operands_valid = 0;
+
+verify_result(16'd8315, 16'd12583);
+
 
         #50;
         $finish;

@@ -29,7 +29,7 @@ module cordic_pipelined #(parameter N = 16) (
         for (i = 0; i < 16; i = i + 1) begin : cordic_stage
             wire signed [N-1:0] x_curr, y_curr, z_curr;
             wire signed [N-1:0] x_shift, y_shift;
-            wire rotate_positive;
+            wire decision_bit;
 
             // Stage 0 takes inputs directly; subsequent stages take from registers
             assign x_curr = (i == 0) ? x_in : x_pipe[i];
@@ -39,7 +39,7 @@ module cordic_pipelined #(parameter N = 16) (
             assign x_shift = x_curr >>> i;
             assign y_shift = y_curr >>> i;
 
-            assign rotate_positive = (cordic_mode) ? y_curr[N-1] : ~z_curr[N-1];
+            assign decision_bit = (cordic_mode) ? y_curr[N-1] : ~z_curr[N-1];
 
             always @(posedge clk) begin
                 if (rst) begin
@@ -47,7 +47,7 @@ module cordic_pipelined #(parameter N = 16) (
                     y_pipe[i+1] <= 0;
                     z_pipe[i+1] <= 0;
                 end else begin
-                    if (rotate_positive) begin
+                    if (decision_bit) begin
                         x_pipe[i+1] <= x_curr - y_shift;
                         y_pipe[i+1] <= y_curr + x_shift;
                         z_pipe[i+1] <= z_curr - atan_lut[i];

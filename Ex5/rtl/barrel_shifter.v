@@ -8,6 +8,7 @@ module barrel_shifter(
     wire signed [15:0] s2;
     wire signed [15:0] s3;
 
+	// Example: when shift by 14 -> 1110, then do 2 bits shift right, then 4 bits shift, then 8 bits shift, so collectively, its 14 bits of shift right.
     assign s1 = shift[0] ? {data_in[15],data_in[15:1]} : data_in;
     assign s2 = shift[1] ? {{2{s1[15]}},s1[15:2]} : s1;
     assign s3 = shift[2] ? {{4{s2[15]}},s2[15:4]} : s2;
