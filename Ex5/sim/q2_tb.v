@@ -3,21 +3,17 @@
 module tb_cordic_pipelined;
 
     parameter N = 16;
+    parameter LATENCY = 18;
+    parameter NUM_TESTS = 5;
 
-    // Inputs
     reg clk;
     reg rst;
     reg cordic_mode;
-    reg signed [N-1:0] x_in;
-    reg signed [N-1:0] y_in;
-    reg signed [N-1:0] theta_in;
+    reg signed [N-1:0] x_in, y_in, theta_in;
 
-    // Outputs
-    wire signed [N-1:0] x_out;
-    wire signed [N-1:0] y_out;
-    wire signed [N-1:0] theta_out;
+    wire signed [N-1:0] x_out, y_out, theta_out;
 
-    // Instantiate the Unit Under Test (UUT)
+    // DUT
     cordic_pipelined #(.N(N)) uut (
         .clk(clk),
         .rst(rst),
@@ -32,77 +28,114 @@ module tb_cordic_pipelined;
 
     always #5 clk = ~clk;
 
+    // ================================
+    // Test Vectors (Streaming Inputs)
+    // ================================
+    reg mode     [0:NUM_TESTS-1];
+    reg signed [15:0] xi [0:NUM_TESTS-1];
+    reg signed [15:0] yi [0:NUM_TESTS-1];
+    reg signed [15:0] zi [0:NUM_TESTS-1];
 
-    // Task to apply inputs, wait for pipeline, and check results
-    task run_test;
-        input mode;
-        input signed [15:0] xi, yi, zi;
-        input signed [15:0] exp_x, exp_y, exp_z;
-        input [8*35:1] test_name;
-        
-        reg signed [15:0] diff_x, diff_y, diff_z;
-        begin
+    reg signed [15:0] exp_x [0:NUM_TESTS-1];
+    reg signed [15:0] exp_y [0:NUM_TESTS-1];
+    reg signed [15:0] exp_z [0:NUM_TESTS-1];
+
+    integer i;
+
+    initial begin
+        mode[0]=0; xi[0]=8192; yi[0]=8192; zi[0]=8579;  // 0.5, 0.5, 30 degree
+        exp_x[0]=4938; exp_y[0]=18428; exp_z[0]=0;
+
+        mode[1]=0; xi[1]=8192; yi[1]=4096; zi[1]=17164; // 0.5, 0.25, 60 degree
+        exp_x[1]=904; exp_y[1]=15056; exp_z[1]=0;
+
+        mode[2]=1; xi[2]=13107; yi[2]=9830; zi[2]=0;    // 0.8, 0.6, 0
+        exp_x[2]=26980; exp_y[2]=0; exp_z[2]=10543;
+
+        // Add 2 more tests
+        mode[3]=0; xi[3]=8192; yi[3]=0; zi[3]=8579;     // 0.5, 0, 30 degree
+        exp_x[3]=11683; exp_y[3]=6744; exp_z[3]=0;
+
+        mode[4]=1; xi[4]=10000; yi[4]=5000; zi[4]=0;    // 0.6, 0.3, 0
+        exp_x[4]=18414; exp_y[4]=0; exp_z[4]=7599;
+    end
+
+    // ================================
+    // Clock + Reset
+    // ================================
+    initial begin
+        clk = 0;
+        rst = 1;
+        x_in = 0; y_in = 0; theta_in = 0;
+        cordic_mode = 0;
+
+        #50;
+        @(negedge clk) rst = 0;
+    end
+
+    // ================================
+    // STREAM INPUTS
+    // ================================
+    initial begin
+        @(negedge rst);
+
+        for (i = 0; i < NUM_TESTS; i = i + 1) begin
             @(negedge clk);
-            cordic_mode = mode;
-            x_in = xi;
-            y_in = yi;
-            theta_in = zi;
+            cordic_mode = mode[i];
+            x_in = xi[i];
+            y_in = yi[i];
+            theta_in = zi[i];
 
-            repeat(16) @(negedge clk);
-            
-            diff_x = (x_out > exp_x) ? (x_out - exp_x) : (exp_x - x_out);
-            diff_y = (y_out > exp_y) ? (y_out - exp_y) : (exp_y - y_out);
-            diff_z = (theta_out > exp_z) ? (theta_out - exp_z) : (exp_z - theta_out);
+            $display("[IN ] Cycle %0d -> X=%d Y=%d Z=%d Mode=%0d",
+                     i, xi[i], yi[i], zi[i], mode[i]);
+        end
+    end
 
-            if (diff_x <= 20 && diff_y <= 20 && diff_z <= 20) begin
-                $display("[PASS] %s", test_name);
-                $display("Expected : X=%d, Y=%d, Theta=%d", exp_x, exp_y, exp_z);
-                $display("Got      : X=%d, Y=%d, Theta=%d", x_out, y_out, theta_out);
+    // ================================
+    // CHECK OUTPUT STREAM
+    // ================================
+    integer out_idx = 0;
+    integer cycle = 0;
 
+    always @(negedge clk) begin
+        if (!rst) begin
+            cycle = cycle + 1;
+
+            // Start checking after latency
+            if (cycle >= LATENCY && out_idx < NUM_TESTS) begin
+                check_output(out_idx);
+                out_idx = out_idx + 1;
+            end
+        end
+    end
+
+    // ================================
+    // CHECK TASK
+    // ================================
+    task check_output;
+        input integer idx;
+
+        reg signed [15:0] dx, dy, dz;
+        begin
+            dx = (x_out > exp_x[idx]) ? (x_out - exp_x[idx]) : (exp_x[idx] - x_out);
+            dy = (y_out > exp_y[idx]) ? (y_out - exp_y[idx]) : (exp_y[idx] - y_out);
+            dz = (theta_out > exp_z[idx]) ? (theta_out - exp_z[idx]) : (exp_z[idx] - theta_out);
+
+            $display("[OUT] Cycle %0d -> X=%d Y=%d Z=%d",
+                     cycle, x_out, y_out, theta_out);
+
+            if (dx <= 20 && dy <= 20 && dz <= 20) begin
+                $display("[PASS] Test %0d\n", idx);
             end else begin
-                $display("[FAIL] %s", test_name);
-                $display("       Expected : X=%d, Y=%d, Theta=%d", exp_x, exp_y, exp_z);
-                $display("       Got      : X=%d, Y=%d, Theta=%d", x_out, y_out, theta_out);
+                $display("[FAIL] Test %0d", idx);
+                $display("Expected X=%d Y=%d Z=%d\n",
+                         exp_x[idx], exp_y[idx], exp_z[idx]);
             end
         end
     endtask
 
     initial begin
-        clk = 0;
-        rst = 1;
-        cordic_mode = 0;
-        x_in = 0;
-        y_in = 0;
-        theta_in = 0;
-
-        #100;
-        @(negedge clk) rst = 0;
-
-        // Format: Q2.14
-        
-        // Test 1: Rotation Mode
-        // Initial Vector : (0.5, 0.5) => (8192, 8192)
-        // Rotation Angle : 30 degrees (pi/6 rad) ≈ 0.5236 => 8579
-        // Expected X_out = 1.64676 * (0.5*cos(30) - 0.5*sin(30)) ≈ 0.30137 => 4938
-        // Expected Y_out = 1.64676 * (0.5*sin(30) + 0.5*cos(30)) ≈ 1.12476 => 18428
-        run_test(0, 16'd8192, 16'd8192, 16'd8579, 16'd4938, 16'd18428, 16'd0, "Rotation: (0.5,0.5) by 30 degrees");
-        
-        // Test 2: Rotation Mode
-        // Initial Vector : (0.5, 0.25) => (8192, 4096)
-        // Rotation Angle : 60 degrees (pi/3 rad) ≈ 1.0476 => 17164
-        // Expected X_out = 1.64676 * (0.5*cos(60) - 0.25*sin(60)) ≈ 0.0335 => 904
-        // Expected Y_out = 1.64676 * (0.5*sin(60) + 0.25*cos(60)) ≈ 0.558 => 15056
-
-        run_test(0, 16'd8192, 16'd4096, 16'd17164, 16'd904, 16'd15056, 16'd0, "Rotation: (0.5,0.25) by 60 degrees");
-
-        // Test 3: Vectoring Mode
-        // Initial Vector : (0.8, 0.6) => (13107, 9830)
-        // Expected Magnitude = sqrt(0.8^2 + 0.6^2) = 1.0
-        // Expected X_out = 1.64676 * 1.0 = 1.64676 => 26980
-        // Expected Z_out = atan(0.6/0.8) = 36.87 degrees ≈ 0.6435 rad => 10543
-        run_test(1, 16'd13107, 16'd9830, 16'd0, 16'd26980, 16'd0, 16'd10543, "Vectoring: (0.8,0.6)");
-        
-        #50;
+        #500;
         $finish;
     end
 

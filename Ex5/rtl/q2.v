@@ -17,6 +17,7 @@ module cordic_pipelined #(parameter N = 16) (
     reg signed [N-1:0] x_pipe [1:16];
     reg signed [N-1:0] y_pipe [1:16];
     reg signed [N-1:0] z_pipe [1:16];
+    reg mode_pipe [1:16];
 
     reg [N-1:0] atan_lut [0:15];
     initial begin
@@ -30,8 +31,9 @@ module cordic_pipelined #(parameter N = 16) (
             wire signed [N-1:0] x_curr, y_curr, z_curr;
             wire signed [N-1:0] x_shift, y_shift;
             wire decision_bit;
+            wire mode_curr;
+            assign mode_curr = (i == 0) ? cordic_mode : mode_pipe[i];
 
-            // Stage 0 takes inputs directly; subsequent stages take from registers
             assign x_curr = (i == 0) ? x_in : x_pipe[i];
             assign y_curr = (i == 0) ? y_in : y_pipe[i];
             assign z_curr = (i == 0) ? theta_in : z_pipe[i];
@@ -39,14 +41,14 @@ module cordic_pipelined #(parameter N = 16) (
             assign x_shift = x_curr >>> i;
             assign y_shift = y_curr >>> i;
 
-            assign decision_bit = (cordic_mode) ? y_curr[N-1] : ~z_curr[N-1];
-
+            assign decision_bit = (mode_curr) ? y_curr[N-1] : ~z_curr[N-1];
             always @(posedge clk) begin
                 if (rst) begin
                     x_pipe[i+1] <= 0;
                     y_pipe[i+1] <= 0;
                     z_pipe[i+1] <= 0;
                 end else begin
+                    mode_pipe[i+1] <= mode_curr;
                     if (decision_bit) begin
                         x_pipe[i+1] <= x_curr - y_shift;
                         y_pipe[i+1] <= y_curr + x_shift;
